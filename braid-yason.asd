@@ -7,6 +7,7 @@
 		:serial t
 		:depends-on (#:alexandria
 								 #:yason
+								 #:babel
 								 #:braid)
 		:components ((:file "package")
 								 (:file "braid-yason")))

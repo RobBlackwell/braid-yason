@@ -6,6 +6,8 @@
 
 ;;(funcall (braid-yason:wrap-json-response #'my-handler) t)
 
+;; (funcall (braid-yason:wrap-json-params (braid-yason:wrap-json-response #'my-handler)) t)
+
 
 
 
