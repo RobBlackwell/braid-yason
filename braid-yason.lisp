@@ -4,7 +4,7 @@
 
 ;;;
 
-(defun convert-string-to-keyword (string)
+(defun string-to-keyword (string)
 	"Converts STRING to a keyword."
 	(intern (string-upcase string) :keyword))
 
@@ -13,12 +13,12 @@
 	(with-output-to-string (stream)
 		(yason:encode object stream)))
 
-(defun decode-json (string)
+(defun parse-json (string)
 	"Takes a STRING containing a JSON description returning a
 corresponding lisp data structure."
 	(yason:parse string
 							 ;; Use options that favour readability.
-							 :object-as :plist :object-key-fn #'convert-string-to-keyword))
+							 :object-as :plist :object-key-fn #'string-to-keyword))
 
 ;;;
 
@@ -36,31 +36,31 @@ content-type header if not already present."
 	(lambda (request)
 		(json-response (funcall handler request))))
 
-(defun decode-json-params (request)
-	"Decodes the request body (a JSON string) and adds a new
+(defun parse-json-params (request)
+	"Parses the request body (a JSON string) and adds a new
 key :json-params with the correponding Lisp data structure."
 	;; TODO
 	(cons :json-params
-						(cons (decode-json (braid:body request)) request)))
+						(cons (parse-json (braid:body request)) request)))
 
-(defun wrap-decode-json-params (handler)
-	"Braid middleware that decodes the request body (a JSON string) and
+(defun wrap-parse-json-params (handler)
+	"Braid middleware that parses the request body (a JSON string) and
 adds a new key :json-params with the correponding Lisp data
 structure."
 	(lambda (request)
-		(json-params (funcall handler request))))
+		(parse-json-params (funcall handler request))))
 
-(defun decode-json-body (response)
+(defun parse-json-body (response)
 	"Parses RESPONSE body as a JSON string replacing body with the
 corresponding Lisp data structure."
 	(setf (braid:body response)
-				(decode-json (braid:body response)))
+				(parse-json (braid:body response)))
 	response)
 	
-(defun wrap-decode-json-body (handler)
+(defun wrap-parse-json-body (handler)
 	"Braid middleware that parses a JSON string response body replacing
 it with a corresponding Lisp data structure."
 	(lambda (response)
-		(json-body (funcall handler request))))
+		(parse-json-body (funcall handler request))))
 
 ;;; End

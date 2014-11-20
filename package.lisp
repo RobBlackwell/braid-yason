@@ -5,7 +5,7 @@
   (:export
 	 #:encode-json-response
 	 #:wrap-encode-json-response
-	 #:decode-json-params
-	 #:wrap-decode-json-params
-	 #:decode-json-body
-	 #:wrap-decode-json-body))
+	 #:parse-json-params
+	 #:wrap-parse-json-params
+	 #:parse-json-body
+	 #:wrap-parse-json-body))
