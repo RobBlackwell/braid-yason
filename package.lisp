@@ -2,6 +2,10 @@
 
 (defpackage #:braid-yason
   (:use #:cl #:alexandria #:braid)
-  (:export #:wrap-json-response
-					 #:wrap-json-params
-					 #:wrap-json-body))
+  (:export
+	 #:encode-json-response
+	 #:wrap-encode-json-response
+	 #:decode-json-params
+	 #:wrap-decode-json-params
+	 #:decode-json-body
+	 #:wrap-decode-json-body))

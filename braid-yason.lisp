@@ -2,20 +2,6 @@
 
 (in-package #:braid-yason)
 
-;;; Unfortunately we see UTF-8 byte order marks being used, despite
-;;; the spec explicitly not recommending it. See
-;;; http://www.unicode.org/versions/Unicode5.0.0/ch02.pdf
-
-(define-constant +utf8-bom+ (vector #xEF #xBB #xBF)
-	:documentation "Byte Order Mark for UTF-8")
-
-(defun my-utf8-bytes-to-string (bytes)
-  "Convert a byte array to a UTF-8 string, skipping the byte order
-mark if necessary"
-  (if (equalp (subseq bytes 0 3) +utf8-bom+)
-      (babel:octets-to-string bytes :start 3 :encoding :utf-8)
-      (babel:octets-to-string bytes :encoding :utf-8)))
-
 ;;;
 
 (defun convert-string-to-keyword (string)
@@ -27,51 +13,54 @@ mark if necessary"
 	(with-output-to-string (stream)
 		(yason:encode object stream)))
 
-(defun decode-json (object)
-	"Takes a string or byte array containing a JSON description returning a
+(defun decode-json (string)
+	"Takes a STRING containing a JSON description returning a
 corresponding lisp data structure."
-	(let ((string (typecase object
-									(string object)
-									((simple-array (unsigned-byte 8)) (my-utf8-bytes-to-string object)))))
-		(yason:parse string
-								 ;; Use options that favour readability.
-								 :object-as :plist :object-key-fn #'convert-string-to-keyword)))
+	(yason:parse string
+							 ;; Use options that favour readability.
+							 :object-as :plist :object-key-fn #'convert-string-to-keyword))
 
 ;;;
 
-(defun wrap-json-response (handler)
+(defun encode-json-response (response)
+	"Converts a response body to JSON and sets the content-type header
+if not already present."
+	(setf (braid:body response) (encode-json (braid:body response)))
+	(unless (braid:header response :content-type)
+		(setf (braid:header response :content-type) "application/json; charset=utf-8"))
+	response)
+
+(defun wrap-encode-json-response (handler)
 	"Braid middleware that converts a response body to JSON and sets the
 content-type header if not already present."
 	(lambda (request)
-		(let* ((response (funcall handler request))
-					 (json (encode-json (braid:body response))))
-			(setf (braid:body response) json)
-			(unless (braid:header response :content-type)
-				(setf (braid:header response :content-type) "application/json; charset=utf-8"))
-			response)))
+		(json-response (funcall handler request))))
 
+(defun decode-json-params (request)
+	"Decodes the request body (a JSON string) and adds a new
+key :json-params with the correponding Lisp data structure."
+	;; TODO
+	(cons :json-params
+						(cons (decode-json (braid:body request)) request)))
 
-(defun wrap-json-params (handler)
-	"Braid middleware that parses a JSON request body and adds the
-resulting data structure into the request with key :json-params"
-	;; TODO - Needs to pull out a proper parms list
+(defun wrap-decode-json-params (handler)
+	"Braid middleware that decodes the request body (a JSON string) and
+adds a new key :json-params with the correponding Lisp data
+structure."
 	(lambda (request)
-		(let ((response (funcall handler request)))
-			(cons :json-params
-						(cons (decode-json (braid:body response)) response)))))
+		(json-params (funcall handler request))))
 
+(defun decode-json-body (response)
+	"Parses RESPONSE body as a JSON string replacing body with the
+corresponding Lisp data structure."
+	(setf (braid:body response)
+				(decode-json (braid:body response)))
+	response)
+	
+(defun wrap-decode-json-body (handler)
+	"Braid middleware that parses a JSON string response body replacing
+it with a corresponding Lisp data structure."
+	(lambda (response)
+		(json-body (funcall handler request))))
 
-(defun wrap-json-body (handler)
-	"Braid middleware that parses a JSON request body replacing it with
-a corresponding Lisp data structure."
-	(lambda (request)
-		(let ((response (funcall handler request)))
-			(setf (braid:body response)
-						(decode-json (braid:body response)))
-			response)))
-
-
-
-
-
-
+;;; End
