@@ -3,9 +3,7 @@
 (defpackage #:braid-yason
   (:use #:cl #:alexandria #:braid)
   (:export
-	 #:encode-json-response
-	 #:wrap-encode-json-response
-	 #:parse-json-params
-	 #:wrap-parse-json-params
+	 #:encode-json-body 
+	 #:wrap-encode-json-body
 	 #:parse-json-body
 	 #:wrap-parse-json-body))
