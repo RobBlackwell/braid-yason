@@ -5,5 +5,6 @@
   (:export
 	 #:encode-json-body 
 	 #:wrap-encode-json-body
+	 #:parse-json
 	 #:parse-json-body
 	 #:wrap-parse-json-body))
