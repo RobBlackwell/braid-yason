@@ -20,35 +20,31 @@ corresponding lisp data structure."
 			   ;; Use options that favour readability.
 			   :object-as :plist :object-key-fn #'string-to-keyword))
 
-;;; TODO REVIEW THIS ..
-
-(defun encode-json-body (http-response)
+(defun encode-json-message-body (http-message)
   "Converts a response body to JSON and sets the content-type header
 if not already present."
-  (setf (braid:http-response-body http-response) (encode-json (braid:http-response-body http-response)))
-  (unless (braid:http-response-header http-response :content-type)
-	(setf (braid:http-response-header http-response :content-type) "application/json; charset=utf-8"))
-  http-response)
+  (setf (braid:http-message-body http-message) (encode-json (braid:http-message-body http-message)))
+  (unless (braid:http-message-header http-message :content-type)
+    (setf (braid:http-message-header http-message :content-type) "application/json; charset=utf-8")))
 
-(defun wrap-encode-json-body (request-handler)
+(defun parse-json-message-body (http-message)
+  "Parses MESSAGE body as a JSON string replacing body with the
+corresponding Lisp data structure."
+  (setf (braid:http-message-body http-message)
+	(parse-json (braid:http-message-body http-message))))
+
+(defun wrap-encode-json-response-body (request-handler)
   "Braid middleware that converts a response body to JSON and sets the
 content-type header if not already present."
   (lambda (http-request)
-	(encode-json-body (funcall request-handler http-request))))
+    (let ((response (funcall request-handler http-request))
+	  (encode-json-message-body response)
+	  response))))
 
-;;;
-
-(defun parse-json-body (http-response)
-  "Parses MESSAGE body as a JSON string replacing body with the
-corresponding Lisp data structure."
-  (setf (braid:http-response-body http-response)
-		(parse-json (braid:http-response-body http-response)))
-  http-response)
-	
-;; (defun wrap-parse-json-body (response-handler)
-;; 	"Braid middleware that parses a JSON string message body replacing
-;; it with a corresponding Lisp data structure."
-;; 	(lambda (response)
-;; 		(parse-json-body (funcall response-handler response))))
+(defun wrap-parse-json-request-body (request-handler)
+  "Braid middleware that..."
+  (lambda (http-request)
+    (parse-json-message-body http-request)
+    (funcall request-handler http-request)))
 
 ;;; End
